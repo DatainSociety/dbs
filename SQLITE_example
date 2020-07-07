@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[3]:
+
+
+import pandas as pd #To get data into a dataframe
+import os #To change directories where needed
+import numpy as np #In case there is a requirement to change data to specific types
+import datetime #To convert datetime fields to date if required
+import sqlite3 #To interact with sqlite database, you can use sqlalchemy if you prefer.
+
+#Create the connection
+conn = sqlite3.connect('Test1.db')
+#Use cursor to begin interaction with the database
+c = conn.cursor()
+
+#Please note I have commented out all of the queries below for the following reasons:
+        #If you rerun the queries you end up with an error stating "Table already exists"
+        
+# c.execute('''CREATE TABLE CLIENTS
+#              ([generated_id] INTEGER PRIMARY KEY,[Client_Name] text, [Country_ID] integer, [Date] date)''')
+
+# c.execute('''CREATE TABLE COUNTRY
+#         ([generated_id] INTEGER PRIMARY KEY,[Country_ID] integer, [Country_Name] text)''')
+        
+# # Create table - DAILY_STATUS
+# c.execute('''CREATE TABLE DAILY_STATUS
+#              ([Client_Name] text, [Country_Name] text, [Date] date)''')
+
+#Create TEST_LEADS, please note syntax is as follows [column name] dtype, [col_name] dtype etc.
+c.execute('''CREATE TABLE TEST_LEADS
+             ([company] text,[job_title] text, [salary] text, [date_posted] text ,[job_details] text, [url] text)''')
+
+#Commit to ensure changes are "committed". For a better understanding please see https://stackoverflow.com/questions/2847999/why-the-need-to-commit-explicitly-when-doing-an-update                 
+conn.commit()
+
+#Read df I prepopulated from a webscraping project
+df = pd.read_csv('leads.csv', index_col=0)
+# Depositing data into test_leads 
+df.to_sql('TEST_LEADS', conn, if_exists='replace', index=False )
+#View data
+df.head()
+#Execute statement 
+c.execute('''
+SELECT DISTINCT *
+FROM TEST_LEADS
+          ''')
+#Run this query post execution to ensure you df captures the results from your sql query
+sql_df = pd.DataFrame(c.fetchall(), columns = df.columns)
+
+#Use this to display all columns in a dataframe
+pd.set_option('display.max_columns',None)
+
+#viewing sql_df
+sql_df
+
+#Check if there is database in my directory?
+[db for db in os.listdir() if '.db' in db]
+
+#Close the connection
+conn.close()
+
+#Reconnect to the database and check query is present in the database
+l_conn = sqlite3.connect('Test1.db')
+#Create curso to interact with the database
+x = l_conn.cursor()
+
+#Run query
+x.execute('SELECT * FROM TEST_LEADS')
+#Ensure that there is a query prior to fetchall otherwise no result will come following subsequent entries
+x.fetchall()
+
